@@ -1,0 +1,18 @@
+{
+  "presets": [
+    "@babel/preset-env",
+    "@babel/preset-react",
+    "@babel/preset-typescript",
+    "jest"
+  ],
+  "plugins": [
+    [
+      "import",
+      {
+        "libraryName": "@material-ui/core",
+        "libraryDirectory": "components", // default: lib
+        "camel2DashComponentName": false // default: true
+      }
+    ]
+  ]
+}
