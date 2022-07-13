@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Hooks, HtmlUtils } from "@delpi/common";
+import { CmUtils, Hooks, HtmlUtils } from "@delpi/common";
 import Scrollbar2 from "react-perfect-scrollbar-z";
 import "./styles.scss";
 
@@ -87,26 +87,21 @@ const Dropdown: React.FC<IDropdownProps> = ({
   useEffect(() => setShow(!!open), [open]);
 
   useEffect(() => {
-    const filterCondition = (item: any) => {
-      return hasKey ? item[keyName] === value : item === value;
-    };
-
-    let itemData = options.find((item) => filterCondition(item));
+    let itemData = options.find((item) => getSelectedValue(item) === value);
     if (itemData) {
-      setLocalLabel(hasKey ? displayObjectLabelName(itemData) : value);
-      setLocalValue(getSelectedValue(value));
+      setLocalLabel(displayObjectLabelName(itemData));
+      setLocalValue(getSelectedValue(itemData));
+      return;
     }
+    setLocalLabel(null);
+    setLocalValue(null);
   }, [value]);
 
   useEffect(() => {
-    if (resizeClose && isShow) {
-      beforeHide();
-    }
+    resizeClose && isShow && beforeHide();
   }, [resize]);
 
-  Hooks.useEventListener("scroll", () => {
-    beforeHide();
-  });
+  Hooks.useEventListener("scroll", () => beforeHide());
   // Hooks.useEventListener("wheel", () => setShow(false))
 
   Hooks.useEventListener("keydown", (e) => {
@@ -125,7 +120,16 @@ const Dropdown: React.FC<IDropdownProps> = ({
   };
 
   const displayObjectLabelName = (value: any) => {
-    return value[labelName] || value[keyName] || JSON.stringify(value);
+    if (!hasKey) {
+      return value;
+    }
+    if (!CmUtils.isNil(value[labelName])) {
+      return value[labelName];
+    }
+    if (!CmUtils.isNil(value[keyName])) {
+      return value[keyName];
+    }
+    return JSON.stringify(value);
   };
 
   const handleClick = () => {
@@ -138,25 +142,23 @@ const Dropdown: React.FC<IDropdownProps> = ({
   };
 
   const getSelectedValue = (value: any) => {
-    let selectedValue: string | number = "";
-
-    if (hasKey) {
-      if (!(value[keyName] === undefined || value[keyName] === null)) {
-        selectedValue = value[keyName];
-      } else {
-        // fake display
-        selectedValue = JSON.stringify(value);
-      }
-    } else {
-      selectedValue = value;
+    if (!hasKey) {
+      return value;
     }
-    return selectedValue;
+
+    if (!CmUtils.isNil(value[keyName])) {
+      return value[keyName];
+    }
+
+    return JSON.stringify(value);
   };
 
   const handleSelect = (value: any) => {
     let selectedValue = getSelectedValue(value);
-    setLocalLabel(hasKey ? displayObjectLabelName(value) : value);
+
+    setLocalLabel(displayObjectLabelName(value));
     setLocalValue(selectedValue);
+
     onSelection(selectedValue, value);
     setShow(false);
   };
@@ -180,7 +182,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
           <span className="dropdown2-label dropdown2-no-message">
             {noDataMessage}
           </span>
-        ) : !localValue ? (
+        ) : CmUtils.isNil(localValue) ? (
           <span
             className={HtmlUtils.joinClass(
               "dropdown2-label dropdown2-placeholder",
@@ -221,7 +223,6 @@ const Dropdown: React.FC<IDropdownProps> = ({
                     currentScroll || 0;
                 });
 
-              // fit height over screen
               let { bottom, top } = refsButton.current.getBoundingClientRect();
               let maxHeightSize = !showTop
                 ? Math.round(window.innerHeight - bottom)
@@ -233,6 +234,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
                 // el.style.top = `${refsButton.current?.offsetHeight + 4}px`
               }
 
+              // fit height over screen
               if (el.clientHeight > maxHeightSize - 8) {
                 setclientDropDownHeight(`${maxHeightSize - 8}px`);
               }
@@ -298,7 +300,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
   }
 
   function DropDownItem({ item }: { item: any }) {
-    const isSelected = (hasKey ? item[keyName] : item) === localValue;
+    const isSelected = getSelectedValue(item) === localValue;
     return (
       <div
         tabIndex={tabIndex}
@@ -312,10 +314,14 @@ const Dropdown: React.FC<IDropdownProps> = ({
           evt.preventDefault();
           !item.disabled && handleSelect(item);
         }}
+        onTouchEnd={(evt) => {
+          evt.preventDefault();
+          !item.disabled && handleSelect(item);
+        }}
         role="option"
         aria-selected={isSelected ? "true" : "false"}
       >
-        <p>{hasKey ? displayObjectLabelName(item) : item}</p>
+        <p>{displayObjectLabelName(item)}</p>
       </div>
     );
   }

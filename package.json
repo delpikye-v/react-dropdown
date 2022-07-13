@@ -1,6 +1,6 @@
 {
   "name": "react-dropdown-z",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "React hook dropdown. (Lib)",
   "main": "build/index.js",
   "module": "build/index.esm.js",
@@ -31,7 +31,9 @@
     "dropdown",
     "react-dropdown",
     "basic-dropdown",
-    "perfect-scrollbar-dropdown",
+    "simple-dropdown",
+    "dropdown-scrollbar",
+    "dropdown-menu",
     "lib"
   ],
   "author": "Delpi.Kye",

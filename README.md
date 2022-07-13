@@ -9,11 +9,11 @@
 
 #### Description
 
-+ Simple dropdown, (group) component for react.
++ Simple, quick dropdown, (group) component for react.
 + Append perfect scrollbar.
-+ Support show top.
++ Support show top, resize hide, select empty...
 + Fit size with window if it is over.
-+ If you want more, please use react-select.
++ If you want more, please use [react-select](https://github.com/JedWatson/react-select).
 
 ---
 ### Usage
@@ -32,6 +32,7 @@ Import the module in the place you want to use:
 ```js
 import 'react-perfect-scrollbar-z/build/styles.css';
 import "react-dropdown-z/build/styles.css";
+
 import Dropdown from "react-dropdown-z";
 
 ```
@@ -47,7 +48,7 @@ import Dropdown from "react-dropdown-z";
       // placeholder="sdjks"
       options={options}
       width="200px"
-      heightDropdown="900px"
+      // heightDropdown="900px"
       value={value}
       onSelection={setValue}
       // showTop
@@ -57,11 +58,11 @@ import Dropdown from "react-dropdown-z";
 
     <Dropdown
       // placeholder="sdjks"
-      keyName="val"
-      labelName="text"
+      keyName="val"  // only set when array option is object
+      labelName="text" // only set when array option is object
       options={options2}
       width="200px"
-      heightDropdown="900px"
+      // heightDropdown="900px"
       value={value}
       onSelection={setValue}
       // showTop
@@ -138,8 +139,8 @@ see <b>index.d.ts</b>
   disabled?: boolean;
   heightDropdown?: string | number; // menu height
   open?: boolean;
-  keepScrollPosition?: boolean;
-  resizeClose?: boolean;
+  keepScrollPosition?: boolean;  // default: true
+  resizeClose?: boolean;  // default: true
   onSelection?: (value: string | number | null, selectItem?: any) => any;
   onShown?: () => void;
   onHidden?: () => void;
