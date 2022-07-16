@@ -5,9 +5,9 @@ import "./styles.scss";
 
 export interface IGroupData {
   isGroup: boolean;
-  groupName: string;
+  groupName: string | React.ReactNode;
   className?: string;
-  item: any[];
+  items: any[];
 }
 
 export interface IDropdownProps {
@@ -27,16 +27,19 @@ export interface IDropdownProps {
   width?: string | number;
   height?: string | number;
   fullWidth?: boolean;
-  // perfectScroll?: boolean;
+  perfectScroll?: boolean; // option support perfectscrollbar
   tabIndex?: number;
   disabled?: boolean;
   heightDropdown?: string | number;
-  open?: boolean;
+  fitWHeight?: boolean;
+  autoDirection?: boolean; // auto change dropdown (showTop) if height is small
+  open?: boolean; // no need
   keepScrollPosition?: boolean;
   resizeClose?: boolean;
+  escClose?: boolean;
   onSelection?: (value: string | number | null, selectItem?: any) => any;
-  onShown?: () => void;
-  onHidden?: () => void;
+  onShown?: () => void; // no need
+  onHidden?: () => void; // no need
 }
 
 const Dropdown: React.FC<IDropdownProps> = ({
@@ -56,15 +59,17 @@ const Dropdown: React.FC<IDropdownProps> = ({
   width = "100%",
   height = "40px",
   fullWidth = true,
-  // perfectScroll = true,
+  perfectScroll,
   tabIndex = -1,
   disabled,
   // duration = 500,
   heightDropdown,
-  // autoDirection = true,
+  fitWHeight = true,
+  autoDirection = true,
   open,
   keepScrollPosition = true,
   resizeClose = true,
+  escClose = true,
   onSelection = () => {},
   onShown = () => {},
   onHidden = () => {},
@@ -72,20 +77,26 @@ const Dropdown: React.FC<IDropdownProps> = ({
   const resize = Hooks.useWindowSize();
 
   const refsButton = useRef<any>(null!);
-  // const refsDropdown = useRef<any>(null!);
+  const refsBasicDropdown = useRef<any>(null!);
   // const refsScroll = useRef<any>(null!);
 
   const [isShow, setShow] = useState<boolean>(false);
   const [localValue, setLocalValue] = useState<string | number | null>(null);
   const [localLabel, setLocalLabel] = useState<any>(null);
   const [currentScroll, setCurrentScroll] = useState<number | null>(null);
-  const [clientDropDownHeight, setclientDropDownHeight] = useState<any>(null);
+  const [clientMaxHeight, setClientMaxHeight] = useState<any>(null);
 
   const hasKey = typeof keyName === "string" && keyName.trim() !== "";
   const hasOpts = Array.isArray(options) && options.length > 0;
 
-  useEffect(() => setShow(!!open), [open]);
+  // active hide if need
+  useEffect(() => {
+    let show = Boolean(open);
+    !show && setClientMaxHeight(null);
+    setShow(show);
+  }, [open]);
 
+  // if you want reset value
   useEffect(() => {
     let itemData = options.find((item) => getSelectedValue(item) === value);
     if (itemData) {
@@ -97,6 +108,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
     setLocalValue(null);
   }, [value]);
 
+  // resize screen
   useEffect(() => {
     resizeClose && isShow && beforeHide();
   }, [resize]);
@@ -105,7 +117,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
   // Hooks.useEventListener("wheel", () => setShow(false))
 
   Hooks.useEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
+    if (escClose && e.key === "Escape") {
       beforeHide();
     }
   });
@@ -113,6 +125,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
   Hooks.useOutsideClick(refsButton, () => beforeHide());
 
   const beforeHide = () => {
+    setClientMaxHeight(null);
     setShow((pre) => {
       pre && onHidden();
       return false;
@@ -132,13 +145,18 @@ const Dropdown: React.FC<IDropdownProps> = ({
     return JSON.stringify(value);
   };
 
-  const handleClick = () => {
+  const handleToggleClick = () => {
     if (!hasOpts) {
       return;
     }
-    let newShow = isShow ? false : true;
-    newShow ? onShown() : onHidden();
-    setShow(newShow);
+    setShow(!isShow);
+
+    if (!isShow) {
+      onShown();
+      return;
+    }
+    onHidden();
+    setClientMaxHeight(null);
   };
 
   const getSelectedValue = (value: any) => {
@@ -161,6 +179,75 @@ const Dropdown: React.FC<IDropdownProps> = ({
 
     onSelection(selectedValue, value);
     setShow(false);
+    setClientMaxHeight(null);
+  };
+
+  const handleRefScroll = (el: any) => {
+    if (el instanceof Element) {
+      keepScrollPosition &&
+        setTimeout(() => {
+          el.querySelector(".scroll-content").scrollTop = currentScroll || 0;
+        });
+
+      if (!fitWHeight) {
+        return;
+      }
+
+      let { bottom, top, height } = refsButton.current.getBoundingClientRect();
+
+      let minHeight = height * 2 + 4;
+      let topHeight = Math.round(top) - 8;
+      let bottomHeight = Math.round(window.innerHeight - bottom) - 8;
+      let maxHeightSize = !showTop ? bottomHeight : topHeight;
+
+      let currentHeight = el.clientHeight;
+
+      if (!autoDirection) {
+        // check real height with screen
+        if (currentHeight > maxHeightSize) {
+          currentHeight = maxHeightSize;
+          setClientMaxHeight(`${currentHeight}px`);
+        }
+
+        if (showTop) {
+          // @ts-ignore
+          el.style.top = `${-currentHeight - 4}px`;
+        } else {
+          // el.style.top = `${refsButton.current?.offsetHeight + 4}px`
+        }
+        return;
+      }
+
+      // remove over screen
+      if (currentHeight > maxHeightSize) {
+        currentHeight = maxHeightSize;
+      }
+
+      if (currentHeight < minHeight) {
+        // move bottom to show top
+        if (!showTop) {
+          // @ts-ignore
+          el.style.top = `${-el.clientHeight - 4}px`;
+          maxHeightSize = topHeight;
+        } else {
+          // default is bottom.
+          maxHeightSize = bottomHeight;
+        }
+
+        // check again after change direction
+        currentHeight = el.clientHeight;
+        if (currentHeight > maxHeightSize) {
+          currentHeight = maxHeightSize;
+        }
+      } else {
+        //e nough height
+        if (showTop) {
+          // @ts-ignore
+          el.style.top = `${-currentHeight - 4}px`;
+        }
+      }
+      setClientMaxHeight(`${currentHeight}px`);
+    }
   };
 
   return (
@@ -175,7 +262,7 @@ const Dropdown: React.FC<IDropdownProps> = ({
           !hasOpts && "dropdown2-button-nodata"
         )}
         disabled={disabled}
-        onClick={handleClick}
+        onClick={handleToggleClick}
         aria-haspopup="listbox"
       >
         {!hasOpts ? (
@@ -215,31 +302,8 @@ const Dropdown: React.FC<IDropdownProps> = ({
         //   classNames="dropdown2-transition"
         // >
         <div
-          ref={(el) => {
-            if (el instanceof Element) {
-              keepScrollPosition &&
-                setTimeout(() => {
-                  el.querySelector(".scroll-content").scrollTop =
-                    currentScroll || 0;
-                });
-
-              let { bottom, top } = refsButton.current.getBoundingClientRect();
-              let maxHeightSize = !showTop
-                ? Math.round(window.innerHeight - bottom)
-                : Math.round(top);
-
-              if (showTop) {
-                el.style.top = `${-el.clientHeight - 4}px`;
-              } else {
-                // el.style.top = `${refsButton.current?.offsetHeight + 4}px`
-              }
-
-              // fit height over screen
-              if (el.clientHeight > maxHeightSize - 8) {
-                setclientDropDownHeight(`${maxHeightSize - 8}px`);
-              }
-            }
-          }}
+          // handle refElement
+          ref={handleRefScroll}
           tabIndex={tabIndex}
           className={HtmlUtils.joinClass(
             "dropdown2-list-items",
@@ -251,24 +315,46 @@ const Dropdown: React.FC<IDropdownProps> = ({
           }}
           aria-expanded="true"
         >
-          {/* @ts-ignore */}
-          <Scrollbar2
-            style={{ maxHeight: clientDropDownHeight || heightDropdown }}
-            effectData={options}
-            always
-            wheelStop={false}
-            onScrollY={(evt: any) => {
-              keepScrollPosition && setCurrentScroll(evt.target.scrollTop);
-            }}
-          >
-            <DropdownListItem />
-          </Scrollbar2>
+          {perfectScroll ? (
+            // @ts-ignore
+            <Scrollbar2
+              style={{ maxHeight: clientMaxHeight || heightDropdown }}
+              effectData={[
+                options,
+                heightDropdown,
+                fitWHeight,
+                autoDirection,
+                showTop,
+              ]}
+              always
+              wheelStop={false}
+              onScrollY={(evt: any) => {
+                keepScrollPosition && setCurrentScroll(evt.target.scrollTop);
+              }}
+            >
+              <DropdownListItem />
+            </Scrollbar2>
+          ) : (
+            <div
+              ref={refsBasicDropdown}
+              className="dropdown2-list-default scroll-content"
+              style={{ maxHeight: clientMaxHeight || heightDropdown }}
+              onScroll={(evt: any) => {
+                keepScrollPosition && setCurrentScroll(evt.target.scrollTop);
+              }}
+            >
+              <DropdownListItem />
+            </div>
+          )}
         </div>
         // </CSSTransition>
       )}
     </div>
   );
 
+  // =======================================================================
+  // =======================================================================
+  // =======================================================================
   function DropdownListItem() {
     return (
       <>
