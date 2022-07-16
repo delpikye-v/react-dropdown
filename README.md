@@ -9,11 +9,12 @@
 
 #### Description
 
-+ Simple, quick dropdown, (group) component for react.
-+ Append perfect scrollbar.
-+ Support show top, resize hide, select empty...
-+ Fit size with window if it is over.
-+ If you want more, please use [react-select](https://github.com/JedWatson/react-select).
++ Simple, quick dropdown (group) for react.
++ Append perfect scrollbar. (if need)
++ Support show top, hide, select empty...
++ Fit to window size if exceeding the height beyond the window.
++ Auto change show top or bootom.(if need).
++ => If you want more, please use [react-select](https://github.com/JedWatson/react-select).
 
 ---
 ### Usage
@@ -21,18 +22,19 @@
 Install the package
 
 ```js
-// apply perfectscrollbar  (require)
-npm ínitall --save react-perfect-scrollbar-z
+// if use perfectScroll = true
+// npm i --D react-perfect-scrollbar-z
 
-npm install --save react-dropdown-z
+npm i --D react-dropdown-z
 
 ```
 
 Import the module in the place you want to use:
 ```js
-import 'react-perfect-scrollbar-z/build/styles.css';
-import "react-dropdown-z/build/styles.css";
+// if use perfectScroll = true
+// import 'react-perfect-scrollbar-z/build/styles.css';
 
+import "react-dropdown-z/build/styles.css";
 import Dropdown from "react-dropdown-z";
 
 ```
@@ -45,30 +47,20 @@ import Dropdown from "react-dropdown-z";
     const options = [ "o1", "tw2", "th3", "f4" ];
 
     <Dropdown
-      // placeholder="sdjks"
+      // placeholder="Abcd"
       options={options}
       width="200px"
-      // heightDropdown="900px"
+      perfectScroll // if need
+      // heightDropdown="100px" // fit with window
       value={value}
       onSelection={setValue}
-      // showTop
-      // resizeClose={false}
+      showTop
     />
+```
 
+<br />
 
-    <Dropdown
-      // placeholder="sdjks"
-      keyName="val"  // only set when array option is object
-      labelName="text" // only set when array option is object
-      options={options2}
-      width="200px"
-      // heightDropdown="900px"
-      value={value}
-      onSelection={setValue}
-      // showTop
-      // resizeClose={false}
-    />
-
+```js
     // Object array
     // keyName and labelName
     const options2 = [
@@ -106,6 +98,18 @@ import Dropdown from "react-dropdown-z";
       },
     ]
 
+    <Dropdown
+      // placeholder="Abcd"
+      keyName="val"  // only set when array option is object
+      labelName="text" // only set when array option is object
+      options={options2}
+      width="200px"
+      value={value}
+      onSelection={setValue}
+      // showTop
+      // resizeClose={false}
+    />
+
 ```
 
 ---
@@ -135,6 +139,7 @@ see <b>index.d.ts</b>
   width?: string | number; // box with
   height?: string | number; // box height
   // fullWidth?: boolean;
+  perfectScroll?: boolean;  // appy perfect scrollbar if true
   tabIndex?: number;
   disabled?: boolean;
   heightDropdown?: string | number; // menu height
